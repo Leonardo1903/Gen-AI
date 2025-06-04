@@ -13,11 +13,13 @@ load_dotenv()
 # openai_api_key=os.getenv("OPENAI_API_KEY")
 gemini_api_key=os.getenv("GEMINI_API_KEY")
 
+# Load Pdf
 pdf_path= Path(__file__).parent / "nodejs.pdf"
 
 loader= PyPDFLoader(file_path=pdf_path)
 docs= loader.load()
 
+# Split documents into smaller chunks
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 
 split_docs = text_splitter.split_documents(docs)
@@ -27,12 +29,13 @@ split_docs = text_splitter.split_documents(docs)
 #     api_key=openai_api_key
 # )
 
+# Generate vector embeddings
 embeddings = GoogleGenerativeAIEmbeddings(
     model="models/embedding-001",
     google_api_key=gemini_api_key
 )
 
-# Ingestion
+# Addition of embeddings to Vector DB
 # vector_store = QdrantVectorStore.from_documents(
 #     documents=[],
 #     url="http://localhost:6333",
@@ -45,7 +48,7 @@ embeddings = GoogleGenerativeAIEmbeddings(
 
 user_question = input("Ask a question about Node.js: ")
 
-# Retrieval
+# Retrieval of relevant chunks from Vector DB
 retriever=QdrantVectorStore.from_existing_collection(
     url="http://localhost:6333",
     collection_name="nodejs",
