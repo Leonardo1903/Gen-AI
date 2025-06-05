@@ -8,8 +8,15 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from openai import OpenAI
 
-load_dotenv()
 
+# Steps for basic RAG
+# 1. Load the PDF document
+# 2. Split the document into smaller chunks
+# 3. Generate vector embeddings for the chunks
+# 4. Store the embeddings in a vector database
+# 5. Retrieve relevant chunks based on user query
+
+load_dotenv()
 
 # openai_api_key=os.getenv("OPENAI_API_KEY")
 gemini_api_key=os.getenv("GEMINI_API_KEY")
