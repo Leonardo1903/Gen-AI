@@ -4,14 +4,20 @@ from pathlib import Path
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 # from langchain_openai import OpenAIEmbeddings
-from langchain_google_genai import GoogleGenerativeAIEmbeddings,ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
+from openai import OpenAI
 
 load_dotenv()
 
+
 # openai_api_key=os.getenv("OPENAI_API_KEY")
 gemini_api_key=os.getenv("GEMINI_API_KEY")
+
+client = OpenAI(
+    api_key=gemini_api_key,
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+)
 
 # Load Pdf
 pdf_path= Path(__file__).parent / "nodejs.pdf"
@@ -62,39 +68,30 @@ retriever=QdrantVectorStore.from_existing_collection(
 
 # print ("Relevant chunks:",search_result)
 
-relevant_chunks = retriever.similarity_search(
-    query=user_question,
+search_results = retriever.similarity_search(
+    query=user_question
 )
 
-prompt = ChatPromptTemplate.from_template(
-    """
-    You are a helpful assistant that answers questions based on the provided context.
+context = "\n\n\n".join([f"Page Content: {result.page_content}\nPage Number: {result.metadata['page_label']}\nFile Location: {result.metadata['source']}" for result in search_results])
+
+SYSTEM_PROMPT = f"""
+    You are a helpfull AI Assistant who asnweres user query based on the available context
+    retrieved from a PDF file along with page_contents and page number.
+
+    You should only ans the user based on the following context and navigate the user
+    to open the right page number to know more.
 
     Context:
     {context}
+"""
 
-    Question:
-    {question}
-    """
+chat_completion = client.chat.completions.create(
+    model="gemini-2.0-flash",
+    messages=[
+        { "role": "system", "content": SYSTEM_PROMPT },
+        { "role": "user", "content": user_question },
+    ]
 )
 
-# Initialize Gemini chat model
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash-001",
-    google_api_key=gemini_api_key
-)
-
-# Format the context for the agent
-context_text = "\n".join([doc.page_content for doc in docs])
-
-# Prepare the prompt
-formatted_prompt = prompt.format(
-    context=context_text,
-    question=user_question
-)
-
-# Get the answer from Gemini
-response = llm.invoke(formatted_prompt)
-
-print("Agent answer:", response.content)
+print(f"🤖: {chat_completion.choices[0].message.content}")
 
