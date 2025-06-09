@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 from langfuse import observe
 from langfuse.openai import openai
 import requests
-from langsmith.wrappers import wrap_openai
 
 load_dotenv()
 
